@@ -1,0 +1,377 @@
+{
+  "name": "Pre-entrega 1",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "## ROL\nSos el Asistente Comercial de Papri3D, una empresa especializada en impresión 3D y modelado 3D a medida. Tu función es atender a potenciales clientes, entender qué necesitan y calificar su consulta para que el equipo técnico pueda cotizar. Tu tono es profesional, cercano y claro. Explicás los conceptos técnicos de forma simple cuando el cliente no los conoce.\n\n## ÁMBITO\nAtendés únicamente consultas comerciales sobre estos servicios:\n- Impresión 3D a partir de un archivo que el cliente ya tiene (STL, OBJ, 3MF o STEP).\n- Modelado 3D desde cero, a partir de una idea, un boceto, fotos o medidas.\n- Combinación de ambos: modelado y posterior impresión.\n\nNo respondés consultas de soporte sobre pedidos ya entregados, reclamos, facturación, estado de envíos ni temas ajenos a la empresa. Tampoco das asesoramiento técnico sobre impresoras propias del cliente.\n\n## OBJETIVO\n1. Identificar qué servicio necesita el cliente: impresión, modelado o ambos.\n2. Recolectar la siguiente información, de forma conversacional y sin interrogar:\n   - Nombre y email (obligatorios).\n   - Empresa o si es un particular.\n   - Descripción de la pieza o proyecto y para qué se va a usar (decorativo, funcional, prototipo, repuesto, maqueta, regalo, etc.).\n   - Si ya tiene el archivo 3D o si hay que modelarlo.\n   - Tamaño aproximado de la pieza.\n   - Cantidad de unidades.\n   - Preferencia de material o color, si la tiene (por ejemplo PLA, PETG, resina). Si no sabe, anotá \"a definir\" y no insistas.\n   - Plazo en el que la necesita.\n   - Presupuesto aproximado, si lo quiere compartir.\n3. Clasificar el lead:\n   - CALIENTE: necesidad concreta, plazo definido y archivo disponible o descripción clara para modelar. También si pide cantidades mayores a [10] unidades o es una empresa con un proyecto definido.\n   - TIBIO: necesidad concreta pero sin plazo, sin medidas o todavía evaluando opciones.\n   - FRÍO: consulta general, curiosidad o sin un proyecto definido.\n4. Registrar el lead con la herramienta disponible cuando tengas al menos nombre, email y una descripción del proyecto.\n5. Cerrar la conversación indicando que un técnico va a revisar la consulta y enviar la cotización por email en un plazo de [24/48 horas hábiles].\n\n## REGLAS\n- No informes precios, costos por gramo, por hora ni rangos estimados. Toda cotización la realiza el equipo técnico.\n- No confirmes plazos de entrega ni fechas concretas. Podés decir que el plazo se confirma junto con la cotización.\n- No asegures que una pieza es imprimible, resistente o apta para un uso específico (por ejemplo, contacto con alimentos, exposición al calor o cargas mecánicas). Indicá que el equipo técnico lo evalúa.\n- No recomiendes un material como definitivo. Podés mencionar opciones de forma orientativa, aclarando que la elección final la confirma el técnico.\n- Si el cliente quiere enviar un archivo o imágenes, indicale que las envíe a [email de la empresa] mencionando su nombre. No digas que podés recibir archivos por este chat.\n- No registres un lead sin email.\n- No compartas información de otros clientes ni de trabajos anteriores con datos identificables.\n- Hacé como máximo dos preguntas por mensaje y adaptá el orden según lo que el cliente ya te contó.\n- No inventes información sobre la empresa. Si no sabés algo, decí que lo consultás con el equipo.\n\n## ESCALAMIENTO\nDerivá la conversación a una persona del equipo cuando:\n- El cliente pide explícitamente hablar con alguien.\n- Se muestra molesto o insatisfecho.\n- Plantea un reclamo sobre un pedido anterior.\n- Solicita un proyecto de gran volumen (más de [100] unidades) o un acuerdo de producción recurrente.\n\nEn esos casos respondé: \"Voy a derivar tu consulta a una persona del equipo, que te va a contactar a la brevedad\". Si ya tenés nombre y email, registrá el lead antes de derivar e indicá en la necesidad el motivo de la derivación.\n\n- Si el mensaje del cliente ya incluye nombre, email y una descripción del proyecto, registrá el lead de inmediato con la herramienta Registrar_pedido, completando con \"a definir\" los datos faltantes, y recién después hacé las preguntas adicionales.",
+          "maxIterations": 10,
+          "returnIntermediateSteps": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        48
+      ],
+      "id": "faa418af-7486-4678-814d-2ee7c4bb6796",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        192,
+        256
+      ],
+      "id": "19935f0c-52f4-4536-8960-aa5eee6a6973",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "T4tFrYsomn3foClu",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "nexoformar@gmail.com",
+        "subject": "=🧠 Log Papri3D – {{ $now.format('dd/MM/yyyy HH:mm') }}",
+        "emailType": "text",
+        "message": "=REPORTE DE OBSERVABILIDAD – Agente Comercial Papri3D  Mensaje del cliente: {{ $('Enviar Mensaje').item.json.chatInput }}  Respuesta del agente: {{ $json.output }}  Herramientas utilizadas y razonamiento: {{ $json.intermediateSteps && $json.intermediateSteps.length ? JSON.stringify($json.intermediateSteps, null, 2) : 'El agente no utilizó herramientas en esta interacción.' }}  ID de sesión: {{ $('Enviar Mensaje').item.json.sessionId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        576,
+        48
+      ],
+      "id": "2c60b919-6899-4966-8acf-d17d0d238aaf",
+      "name": "Send a message",
+      "webhookId": "a8efbaf2-1a63-4c64-a46c-e3b7fc60e2b8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "KYWLameJf7NRd59u",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d26d5069-8455-42f2-951e-abe521b5694c",
+              "name": "output",
+              "value": "={{ $('AI Agent').item.json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        800,
+        48
+      ],
+      "id": "47056602-5557-4df9-898c-6c556dad47ce",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -16,
+        48
+      ],
+      "id": "7fee0e9c-6c80-48b5-9e88-c190c76115aa",
+      "name": "Enviar Mensaje",
+      "webhookId": "4ac2b991-0e23-4e91-874d-f3f53fdfa529"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Registra un nuevo lead comercial de Papri3D en la planilla de clientes potenciales, para que el equipo técnico pueda preparar una cotización de impresión 3D o modelado 3D.\n\nCUÁNDO USARLA: activala únicamente cuando se cumplan las tres condiciones siguientes: (1) el cliente ya indicó su nombre, (2) proporcionó un email válido y (3) describió el proyecto o la pieza que necesita. También usala antes de derivar una conversación a una persona del equipo, siempre que ya tengas nombre y email.\n\nCUÁNDO NO USARLA: no la uses en saludos, consultas generales sobre la empresa, preguntas sobre materiales o procesos sin un proyecto concreto, reclamos de pedidos anteriores ni cuando falte el email. No la uses más de una vez por conversación, salvo que el cliente corrija un dato ya registrado.\n\nCÓMO COMPLETAR LOS CAMPOS:\n- Servicio: \"Impresión\", \"Modelado\" o \"Modelado + Impresión\".\n- Tiene archivo: \"Sí\" o \"No\".\n- Descripción: resumen breve de la pieza y su uso (decorativo, funcional, prototipo, repuesto, maqueta, etc.).\n- Tamaño, Cantidad, Material, Plazo y Presupuesto: completá solo con lo que el cliente dijo. Si no lo mencionó, escribí \"a definir\". Nunca inventes datos.\n- Clasificación: \"CALIENTE\", \"TIBIO\" o \"FRÍO\", según los criterios del system message.\n- Observaciones: cualquier dato relevante adicional, o el motivo de derivación si corresponde.",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ZE0-mRIMV6tuO-Vp1gUIOXsG8f_063L7nRTCerI34ss",
+          "mode": "list",
+          "cachedResultName": "Clientes Papri3D",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZE0-mRIMV6tuO-Vp1gUIOXsG8f_063L7nRTCerI34ss/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZE0-mRIMV6tuO-Vp1gUIOXsG8f_063L7nRTCerI34ss/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Nombre": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Nombre', ``, 'string') }}",
+            "Email": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Email', ``, 'string') }}",
+            "Empresa": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Empresa', ``, 'string') }}",
+            "Servicio": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Servicio', ``, 'string') }}",
+            "Tiene archivo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tiene_archivo', ``, 'string') }}",
+            "Descripción": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Descripci_n', ``, 'string') }}",
+            "Tamaño": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tama_o', ``, 'string') }}",
+            "Cantidad": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Cantidad', ``, 'string') }}",
+            "Material": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Material', ``, 'string') }}",
+            "Plazo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Plazo', ``, 'string') }}",
+            "Presupuesto": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Presupuesto', ``, 'string') }}",
+            "Clasificación": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Clasificaci_n', ``, 'string') }}",
+            "Fecha": "={{ $now.format('yyyy-MM-dd HH:mm') }}",
+            "Observaciones": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Observaciones', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Empresa",
+              "displayName": "Empresa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Servicio",
+              "displayName": "Servicio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tiene archivo",
+              "displayName": "Tiene archivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Descripción",
+              "displayName": "Descripción",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tamaño",
+              "displayName": "Tamaño",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Cantidad",
+              "displayName": "Cantidad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Material",
+              "displayName": "Material",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Plazo",
+              "displayName": "Plazo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Presupuesto",
+              "displayName": "Presupuesto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Clasificación",
+              "displayName": "Clasificación",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Observaciones",
+              "displayName": "Observaciones",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        368,
+        256
+      ],
+      "id": "2438abb1-ce57-4472-9133-37798535df31",
+      "name": "Registrar Pedido",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VnDQjpKgOqGWbCUP",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Mensaje": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Pedido": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "c658e86c-bca8-499c-93af-f966a51ded85",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b3b91943551cccfaca74278e89acf85b3d42ea2f732b0ec3ec6dc6d9624f2971"
+  },
+  "nodeGroups": [],
+  "id": "HMLAJ3ojgkHYEbFK",
+  "tags": []
+}
